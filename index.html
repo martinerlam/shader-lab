@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fluid Cubes ShaderLab</title>
+  <style>
+    html, body { margin:0; height:100%; background:#06070a; overflow:hidden; }
+    #c { width:100%; height:100%; display:block; }
+    .panel{
+      position:fixed; left:12px; top:12px;
+      width:min(520px, calc(100vw - 24px));
+      max-height: calc(100vh - 24px);
+      overflow:auto;
+      color:rgba(255,255,255,.92);
+      background:rgba(0,0,0,.38);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:12px 12px 10px 12px;
+      font:12px/1.25 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      backdrop-filter: blur(10px);
+      user-select:none;
+      z-index: 10;
+    }
+    .title{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:10px; }
+    .title b{ font-weight:800; letter-spacing:.2px; }
+    .meta{ opacity:.85; font-variant-numeric: tabular-nums; white-space:nowrap; }
+    .row{ display:grid; grid-template-columns: 140px 1fr 60px; gap:10px; align-items:center; padding:6px 0; }
+    .toggleRow{ display:flex; gap:10px; align-items:center; padding:6px 0 2px 0; }
+    input[type="range"]{ width:100%; }
+    select{
+      width:100%; height:28px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.92);
+      padding:0 10px; outline:none;
+    }
+    button{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:rgba(255,255,255,.92);
+      padding:7px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font:600 12px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    }
+    button:hover{ background:rgba(255,255,255,.10); }
+    .btnrow{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    #logo{
+      position:fixed; top:12px; right:12px;
+      width:170px; height:auto; opacity:.92;
+      pointer-events:none; user-select:none;
+      filter: drop-shadow(0 6px 16px rgba(0,0,0,.45));
+      z-index:9;
+    }
+    #logo.hidden{ display:none; }
+    #err{
+      position:fixed; left:12px; bottom:12px;
+      max-width:min(820px, calc(100vw - 24px));
+      padding:10px 12px;
+      border-radius:12px;
+      background: rgba(255, 60, 80, 0.14);
+      border: 1px solid rgba(255, 60, 80, 0.35);
+      color: rgba(255,255,255,0.95);
+      font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      backdrop-filter: blur(10px);
+      white-space: pre-wrap;
+      display:none;
+      z-index:9999;
+    }
+    .hint{ margin-top:10px; opacity:.75; font-size:11px; line-height:1.3; }
+    .pill{
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <img id="logo" src="Renderheads Logos-02.png" alt="RenderHeads" />
+  <div id="err"></div>
+
+  <div class="panel" id="ui">
+    <div class="title">
+      <div><b>Fluid Cubes ShaderLab</b> <span class="pill">pages-0.1.1</span></div>
+      <div class="meta"><span id="fps">FPS: —</span> · <span id="gpu">GPU: —</span></div>
+    </div>
+
+    <div class="row">
+      <label for="variant">Shader variant</label>
+      <select id="variant">
+        <option value="default" selected>Default (gradient)</option>
+        <option value="fresnel">Fresnel rim</option>
+        <option value="heat">Heat/velocity</option>
+      </select>
+      <div class="meta"></div>
+    </div>
+
+    <div class="row"><label for="count">Cube count</label><input id="count" type="range" min="500" max="20000" step="500" value="8000" /><div id="countV" class="meta">8000</div></div>
+
+    <div class="row"><label for="amp">Amp</label><input id="amp" type="range" min="0" max="1.5" step="0.01" value="0.55" /><div id="ampV" class="meta">0.55</div></div>
+    <div class="row"><label for="speed">Speed</label><input id="speed" type="range" min="0" max="2.0" step="0.01" value="0.55" /><div id="speedV" class="meta">0.55</div></div>
+    <div class="row"><label for="cubeScale">Cube size</label><input id="cubeScale" type="range" min="0.25" max="2.5" step="0.01" value="1.00" /><div id="cubeScaleV" class="meta">1.00</div></div>
+    <div class="row"><label for="spin">Spin</label><input id="spin" type="range" min="0" max="3.0" step="0.01" value="0.85" /><div id="spinV" class="meta">0.85</div></div>
+
+    <div class="toggleRow"><input id="stirOn" type="checkbox" checked /><label for="stirOn">Mouse stirring (right-drag / touch)</label></div>
+    <div class="row"><label for="stirStrength">Stir strength</label><input id="stirStrength" type="range" min="0" max="3.0" step="0.01" value="1.2" /><div id="stirStrengthV" class="meta">1.20</div></div>
+    <div class="row"><label for="stirRadius">Stir radius</label><input id="stirRadius" type="range" min="0.05" max="2.5" step="0.01" value="0.8" /><div id="stirRadiusV" class="meta">0.80</div></div>
+
+    <div class="toggleRow"><input id="containerOn" type="checkbox" checked /><label for="containerOn">Wire container</label></div>
+
+    <div class="btnrow">
+      <button id="reset">Reset distribution (R)</button>
+      <button id="pause">Pause (Space)</button>
+      <button id="diag">Open diagnostic</button>
+    </div>
+
+    <div class="hint">
+      Left-drag: rotate · Wheel: zoom · Right-drag / touch: stir<br>
+      Pages-ready: HTML is in repo root; scripts under <code>/src</code>.
+    </div>
+  </div>
+
+  <script type="module" src="./src/host/app.js"></script>
+</body>
+</html>
